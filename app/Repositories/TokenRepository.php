@@ -36,9 +36,9 @@ class TokenRepository implements TokenRepositoryInterface
     {
         $token_attributes['token_type'] = 'Bearer';
         $token_attributes['product'] = $this->product;
-
-        if (isset($token_attributes['expires_in'])) {
-            $token_attributes['expires_at'] = Carbon::now()->addSeconds($token_attributes['expires_in']);
+        $token_attributes['access_token'] = $token_attributes['token'];
+        if (isset($token_attributes['expiresIn'])) {
+            $token_attributes['expires_at'] = Carbon::now()->addSeconds($token_attributes['expiresIn']);
         }
 
         return Token::create($token_attributes);
