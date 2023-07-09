@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\Helpers;
 use App\Models\Transaction;
+use App\TranzakApiProducts\TranzakCollection;
 use Bmatovu\MtnMomo\Exceptions\CollectionRequestException;
 use Bmatovu\MtnMomo\Products\Collection;
 use Illuminate\Http\Request;
@@ -58,7 +59,8 @@ class TransactionController extends Controller
             'student_id'=>'required|numeric',
             'year_id'=>'required|numeric',
             'payment_purpose'=>'required',
-            'payment_id'=>'required|numeric'
+            'payment_id'=>'required|numeric',
+            'payment_gateway'=>'required'
         ]);
 
         if ($validator->fails()) {
@@ -68,11 +70,27 @@ class TransactionController extends Controller
 
         //todo: remove try catch before pushing to life
         try {
+            $transactionId = '';
+            $requestId = '';
+            $paymentAuthUrl = '';
+            if ($request->payment_gateway === 'momo'){
+                $collection = new Collection();
+                $transactionId = $collection->requestToPay(Uuid::uuid4()->toString(), '237' . $request->tel, $request->amount);
+            }elseif ($request->payment_gateway === 'tranzak'){
+                $collection = new TranzakCollection();
+                if ($request->tel){
+                    $response = $collection->requestToPayWithMobileWallet($request->amount,$request->payment_purpose,$request->tel);
+                        $transactionId = $response['transactionId'];
+                        $requestId = $response['requestId'];
+                }else{
+                    $response =  $collection->requestToPayWithRedirectPayment($request->amount,$request->payment_purpose);
+                        $transactionId = $response['transactionId'];
+                        $requestId = $response['requestId'];
+                        $paymentAuthUrl = $response['links']->paymentAuthUrl;
+                }
 
-            // return random_int(111111011010, 999999999999);
-            $collection = new Collection();
+            }
 
-            $momoTransactionId = $collection->requestToPay(Uuid::uuid4()->toString(), '237' . $request->tel, $request->amount);
             // dd($momoTransactionId);
             //save transaction
            $transaction = new Transaction();
@@ -82,11 +100,12 @@ class TransactionController extends Controller
            $transaction->year_id = $request->year_id ?? Helpers::instance()->getCurrentAccademicYear();
            $transaction->amount = intval($request->amount);
            $transaction->reference = $request->reference ?? time().random_int(100000, 999999);
-           $transaction->transaction_id = $momoTransactionId;
+           $transaction->transaction_id = $transactionId;
            $transaction->payment_id = $request->payment_id;
            $transaction->student_id = $request->student_id;
            $transaction->save();
-           return $momoTransactionId;
+            return redirect(url()->previous())->with('transaction_response', ['transaction_id'=>$transactionId , 'success'=>true,'transaction_status'=>'payment initiated','request_id'=>$requestId,'payment_auth_url'=>$paymentAuthUrl] );
+//            return $momoTransactionId;
         } catch (CollectionRequestException $e) {
             // do {
             //     printf("\n\r%s:%d %s (%d) [%s]\n\r",
@@ -103,16 +122,23 @@ class TransactionController extends Controller
         // return response()->json( ['transaction_id'=>$momoTransactionId , 'success'=>true,'transaction_status'=>'payment initiated'] );
     }
 
-    public function getTransactionStatus($transaction_id)
+    public function getTransactionStatus($payment_gateway,$transaction_id)
     {
-        $collection = new Collection();
-        $transaction_status = $collection->getTransactionStatus($transaction_id);
+        $transaction_status = '';
+        if ($payment_gateway === 'momo'){
+            $collection = new Collection();
+            $transaction_status = $collection->getTransactionStatus($transaction_id);
+        }elseif ($payment_gateway === 'tranzak'){
+            $collection = new TranzakCollection();
+            $transaction_status = $collection->getTransactionStatus($transaction_id);
+        }
+
         // dd($transaction_status);
         return response()->json($transaction_status);
 
 //        $transaction = Transaction::where('transaction_id',$transaction_id)->find();
 //        if ($transaction){
-//            $collection = new Collection();
+//            $collection = new TranzakCollection();
 //            $transaction_status =$collection->getTransactionStatus($transaction_id);
 //            if ($transaction_status['status'] == 'SUCCESSFUL'){
 //                //update transaction table

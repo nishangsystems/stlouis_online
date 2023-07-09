@@ -7,11 +7,11 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Ramsey\Uuid\Uuid;
 
-class Collection extends Product
+class TranzakCollection extends TranzakProduct
 {
 
     /**
-     * Product.
+     * TranzakProduct.
      *
      * @var string
      */
@@ -71,9 +71,11 @@ class Collection extends Product
         try {
 
             $response =  $this->client->request('POST', $this->transactionUri,$options);
-            return json_decode($response->getBody(), true);
-
-
+            $responseBody = json_decode($response->getBody(), true);
+            if (!$responseBody->success){
+                throw new CollectionRequestException('Request to pay transaction - unsuccessful.');
+            }
+            return $responseBody;
         } catch (RequestException $ex) {
 
             throw new CollectionRequestException('Request to pay transaction - unsuccessful.', 0, $ex);
@@ -103,7 +105,11 @@ class Collection extends Product
         try {
 
             $response =  $this->client->request('POST', $this->transactionUri,$options);
-            return json_decode($response->getBody(), true);
+            $responseBody = json_decode($response->getBody(), true);
+            if (!$responseBody->success){
+                throw new CollectionRequestException('Request to pay transaction - unsuccessful.');
+            }
+            return $responseBody;
         } catch (RequestException $ex) {
 
             throw new CollectionRequestException('Request to pay transaction - unsuccessful.', 0, $ex);
@@ -128,6 +134,11 @@ class Collection extends Product
             ]);
 
             return json_decode($response->getBody(), true);
+            $responseBody = json_decode($response->getBody(), true);
+            if (!$responseBody->success){
+                throw new CollectionRequestException('Unable to get request details');
+            }
+            return $responseBody->status;
         } catch (RequestException $ex) {
             throw new CollectionRequestException('Unable to get transaction status.', 0, $ex);
         }
@@ -144,9 +155,14 @@ class Collection extends Product
                 ],
             ]);
 
-            return json_decode($response->getBody(), true);
+            $responseBody = json_decode($response->getBody(), true);
+            if (!$responseBody->success){
+                throw new CollectionRequestException('Unable to get request details');
+            }
+           return $responseBody;
+
         } catch (RequestException $ex) {
-            throw new CollectionRequestException('Unable to get transaction status.', 0, $ex);
+            throw new CollectionRequestException('Unable to get request.', 0, $ex);
         }
     }
 

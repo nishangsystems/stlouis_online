@@ -14,10 +14,10 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Support\Str;
 
-abstract class Product
+abstract class TranzakProduct
 {
     /**
-     * Product.
+     * TranzakProduct.
      *
      * @var string
      */

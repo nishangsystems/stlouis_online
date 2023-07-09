@@ -13,7 +13,7 @@ use Carbon\Carbon;
 class TokenRepository implements TokenRepositoryInterface
 {
     /**
-     * Product.
+     * TranzakProduct.
      *
      * @var string
      */

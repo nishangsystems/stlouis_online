@@ -250,7 +250,7 @@ return [
         'environment' => env('TRANZAK_ENVIRONMENT', 'sandbox'),
 
         /*
-         * Product.
+         * TranzakProduct.
          *
          * The product you subscribed too.
          *
