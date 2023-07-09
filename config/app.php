@@ -269,8 +269,6 @@ return [
             // API base URI.
             'base_uri' => env('TRANZAK_API_BASE_URI', 'https://dsapi.tranzak.me'),
 
-            // Generates authorization token
-            'token_uri' => env('TRANZAK_API_TOKEN_URI', '/auth/token'),
         ],
 
         'products' => [
@@ -279,7 +277,7 @@ return [
                 'id' => env('TRANZAK_COLLECTION_APP_ID'),
 
                 // Client API key.
-                'secret' => env('TRANZAK_COLLECTION__API_KEY'),
+                'secret' => env('TRANZAK_COLLECTION_API_KEY'),
 
                 // Creates a payment request url
                 'redirect_payment_uri' => env('TRANZAK_API_REDIRECT_PAYMENT_URI', '/xp021/v1/request/create'),
@@ -287,13 +285,16 @@ return [
                 // Creates a direct charge of for mobile money number
                 'mobile_wallet_uri' => env('MOMO_API_MOBILE_WALLET_URI', '/xp021/v1/request/create-mobile-wallet-charge'),
 
+                // Generates authorization token
+                'token_uri' => env('TRANZAK_API_TOKEN_URI', '/auth/token'),
+
                 // Return URI.
                 'callback_uri' => env('TRANZAK_COLLECTION_CALLBACK_URI'),
 
                 // Transaction status
                 'transaction_status_uri' => env(
                     'TRANZAK_COLLECTION_TRANSACTION_STATUS_URI',
-                    ' /xp021/v1/transaction/verify?transactionId={TRANSACTION_ID}'
+                    '/xp021/v1/transaction/verify?transactionId={TRANSACTION_ID}'
                 ),
                 // Account balance
                 'request_details_uri' => env('MOMO_COLLECTION_PAYMENT_REQUEST_URI', '/xp021/v1/request/details?requestId={REQUEST_ID}')
