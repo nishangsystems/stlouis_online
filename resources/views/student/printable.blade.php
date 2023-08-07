@@ -26,7 +26,7 @@
     <STYLE>
         body {
             font-family: Arial, Helvetica, sans-serif;
-            background-color: white !important;
+            background-color: rgb(255, 255, 255) !important;
         }
         .input-group {
             position: relative;
@@ -73,8 +73,9 @@
 </head>
 
 <body class="no-skin">
-    <div class="" style="background-color: white;">
-        <img src="{{\App\Helpers\Helpers::instance()->getHeader()}}" class="w-100 h-auto">
+    <div class="" style="background-color: transparent;">
+        <img src="{{ asset('assets/images/_header.jpeg') }}" class="w-100 h-auto">
+        {{-- <img src="{{\App\Helpers\Helpers::instance()->getHeader()}}" class="w-100 h-auto"> --}}
         <div class="text-center text-black h3 py-2">{{$title ?? ''}}</div>
         @yield('section')
     </div>

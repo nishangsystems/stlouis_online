@@ -16,6 +16,7 @@ use App\Models\Charge;
 use App\Models\ClassSubject;
 use App\Models\Config;
 use App\Models\CourseNotification;
+use App\Models\Degree;
 use App\Models\Income;
 use App\Models\Material;
 use App\Models\NonGPACourse;
@@ -177,11 +178,7 @@ class HomeController extends Controller
     {
         # code...
         $data['title'] = "Our programs";
-        $data['campuses'] = json_decode($this->api_service->campuses())->data;
-        foreach ($data['campuses'] as $key => $value) {
-            # code...
-            $data['campuses'][$key]->programs = collect(json_decode($this->api_service->campusPrograms($value->id))->data)->unique();
-        }
+        $data['degrees'] = Degree::all();
         // return $data;
         return view('student.online.programs', $data);
     }
@@ -190,7 +187,7 @@ class HomeController extends Controller
     {
         try {
 
-            if(auth('student')->user()->applicationForms()->whereNotNull('transaction_id')->where('year_id', Helpers::instance()->getCurrentAccademicYear())->count() > 0){
+            if(auth('student')->user()->applicationForms()->where('submitted', true)->where('year_id', Helpers::instance()->getCurrentAccademicYear())->count() > 0){
                 return back()->with('error', "You are allowed to submit only one application form per year");
             }
 
@@ -201,7 +198,6 @@ class HomeController extends Controller
             # code...
             $data['step'] = $step;
             // return $this->api_service->campuses();
-            $data['campuses'] = json_decode($this->api_service->campuses())->data;
             $application = ApplicationForm::where(['student_id'=>auth('student')->id(), 'year_id'=>Helpers::instance()->getCurrentAccademicYear()])->first();
             if($application == null){
                 $application = new ApplicationForm();
@@ -210,26 +206,10 @@ class HomeController extends Controller
                 $application->save();
             }
             $data['application'] = $application;
-    
-            if($data['application']->degree_id != null){
-                $data['degree'] = collect(json_decode($this->api_service->degrees())->data)->where('id', $data['application']->degree_id)->first();
-            }
-            if($data['application']->campus_id != null){
-                $data['campus'] = collect($data['campuses'])->where('id', $data['application']->campus_id)->first();
-            }
-            if($data['application']->degree_id != null){
-                $data['certs'] = json_decode($this->api_service->certificates())->data;
-            }
-            if($data['application']->entry_qualification != null){
-                $data['programs'] = json_decode($this->api_service->campusDegreeCertificatePrograms($data['application']->campus_id, $data['application']->degree_id, $data['application']->entry_qualification))->data;
-                $data['cert'] = collect($data['certs'])->where('id', $data['application']->entry_qualification)->first();
-            }
-            if($data['application']->program_first_choice != null){
-                $data['program1'] = collect($data['programs'])->where('id', $data['application']->program_first_choice)->first();
-                $data['program2'] = collect($data['programs'])->where('id', $data['application']->program_second_choice)->first();
-                // return $data;
-            }
-            
+            $data['programs'] = \App\Models\Program::where('type', 'primary')->get();
+            $data['aux_programs'] = \App\Models\Program::where('type', 'auxiliary')->get();
+            $data['degrees'] = Degree::all();
+            $data['degree'] = $application->degree_id == null ? null : $data['degrees']->where('id', $application->degree_id)->first();
             $data['title'] = (isset($data['degree']) and ($data['degree'] != null)) ? $data['degree']->deg_name." APPLICATION FOR DOUALA-BONABERI" : "APPLICATION FOR DOUALA-BONABERI";
             return view('student.online.fill_form', $data);
         } catch (\Throwable $th) {
@@ -251,7 +231,7 @@ class HomeController extends Controller
             case 1:
                 # code...
                 $validity = Validator::make($request->all(), [
-                    'campus_id'=>'required', 'degree_id'=>'required'
+                    'degree_id'=>'required'
                 ]);
                 break;
             
@@ -259,16 +239,19 @@ class HomeController extends Controller
                 # code...
                 // return $request->all();
                 $validity = Validator::make($request->all(), [
-                    "name"=>'required',"gender"=> "required","dob"=> "required", "pob"=> "required", "nationality"=> "required",
-                    "region"=> "required", "division"=> "required", "residence"=> "required", "phone"=> "required", "email"=> "required|email",
-                    "referer"=> "required", "high_school"=> "required", "campus_id"=> "required", "entry_qualification"=> "required"
+                    "name"=>'required', "dob"=>'required|date', "pob"=>'required',
+                    "gender"=>'required', "id_card_number"=>'required', 
+                    "id_date_of_issue"=>'required|date', "id_place_of_issue"=>'required', 
+                    "nationality"=>'required', "region"=>'required', 
+                    "country_of_birth"=>'required', "referer"=>'required'
                 ]);
                 break;
             
             case 3:
                 # code...
                 $validity = Validator::make($request->all(), [
-                    'program_first_choice'=>'required', 'program_second_choice'=>'required',
+                    "residence"=>'required', "phone"=>'required', "email"=>'required|email', "guardian"=>'required', "guardian_phone"=>'required', 
+                    "guardian_address"=>'required', "sponsor"=>'required', "sponsor_phone"=>'required', "sponsor_address"=>'required'
                 ]);
                 break;
             
@@ -276,40 +259,22 @@ class HomeController extends Controller
                 # code...
                 
                 $validity = Validator::make($request->all(), [
-                    // 'first_spoken_language'=>'required', 'first_written_language'=>'required',
-                    'employments'=>'array', 'previous_training'=>'array'
+                    "secondary_school"=>'required', "secondary_exam_center"=>'required', "secondary_candidate_number"=>'required',
+                    "secondary_exam_year"=>'required', "gce_ol_record"=>'required', "high_school"=>'required', "high_school_exam_center"=>'required',
+                    "high_school_candidate_number"=>'required', "high_school_exam_year"=>'required', "gce_al_record"=>'required'
                 ]);
                 break;
                 
             case 5:
                 # code...
-                // return $request->all();
-                // $validity = Validator::make($request->all(), [
-                //     'has_health_problem'=>'required|', 'has_health_allergy'=>'required', 'has_disability'=>'required',
-                //     'health_problem'=>'required_if:has_health_problem,yes', 'health_allergy'=>'required_if:has_health_allergy,yes', 
-                //     'disability'=>'required_if:has_disability,yes',
-                // ]);
                 $validity = Validator::make($request->all(), [
-                    'fee_payer'=>'required', 'fee_payer_name'=>'required', 'fee_payer_residence'=>'required',
-                    'fee_payer_tel'=>'required', 'fee_payer_occupation'=>'required'
+                    'program'=>'required'
                 ]);
                 break;
                 
             case 6:
-                $validity = Validator::make($request->all(), [
-                    
-                ]);
+                $validity = Validator::make($request->all(), ['submitted'=>'required']);
                 # code...
-                break;
-            
-            case 7:
-                # code...
-                // return $request->all();
-                // momo-number validated with country code for cameroon: 237
-                $validity = Validator::make($request->all(), [
-                    "momo_number"=> "required|size:9", "amount"=> "required|numeric|min:1",
-                    // "momo_screenshot"=> "file"
-                ]);
                 break;
             
         }
@@ -320,84 +285,37 @@ class HomeController extends Controller
         // return $request->all();
 
         // persist data
-        $data = [];
+        $data = $request->all();
         if($step == 4){
             $data_p1=[];
-            $_data = $request->previous_training;
+            $_data = $request->gce_ol_record;
             // return $_data;
             if($_data != null){
-                foreach ($_data['school'] as $key => $value) {
-                    $data_p1[] = ['school'=>$value, 'year'=>$_data['year'][$key], 'course'=>$_data['course'][$key], 'certificate'=>$_data['certificate'][$key]];
+                foreach ($_data['subject'] as $key => $value) {
+                    $data_p1[] = ['subject'=>$value, 'grade'=>$_data['grade'][$key]];
                 }
-                $data['previous_training'] = json_encode($data_p1);
+                $data['gce_ol_record'] = json_encode($data_p1);
                 // return $data;
             }
             $data_p2 = [];
-            $e_data = $request->employments;
+            $e_data = $request->gce_al_record;
             if($e_data != null){
-                foreach ($e_data['employer'] as $key => $value) {
-                    $data_p2[] = ['employer'=>$value, 'post'=>$e_data['post'][$key], 'start'=>$e_data['start'][$key], 'end'=>$e_data['end'][$key], 'type'=>$e_data['type'][$key]];
+                foreach ($e_data['subject'] as $key => $value) {
+                    $data_p2[] = ['subject'=>$value, 'grade'=>$e_data['grade'][$key]];
                 }
-                $data['employments'] = json_encode($data_p2);
+                $data['gce_al_record'] = json_encode($data_p2);
                 // return $data;
             }
             $data = collect($data)->filter(function($value, $key){return $key != '_token';})->toArray();
             $application = ApplicationForm::updateOrInsert(['id'=> $application_id, 'student_id'=>auth('student')->id()], $data);
         }
-        elseif($step ==7){
-            
-            // MAKE API CALL TO PERFORM PAYMENT OF APPLICATION FEE
-            // check if token exist and hasn't expired or get new token otherwise
-            $application = auth('student')->user()->applicationForms()->where('year_id', Helpers::instance()->getCurrentAccademicYear())->first();
-            $tranzak_credentials = TranzakCredential::where('campus_id', $application->campus_id)->first();
-            if(cache($tranzak_credentials->cache_token_key) == null or Carbon::parse(cache($tranzak_credentials->cache_token_expiry_key))->isAfter(now())){
-                // get and cache different token
-                $response = Http::post(config('tranzak.base').config('tranzak.token'), ['appId'=>$tranzak_credentials->app_id, 'appKey'=>$tranzak_credentials->api_key]);
-                if($response->status() == 200){
-                    // return json_decode($response->body())->data;
-                    // return Carbon::createFromTimestamp(time() + json_decode($response->body())->data->expiresIn);
-                    // cache token and token expirationtot session
-                    cache([$tranzak_credentials->cache_token_key => json_decode($response->body())->data->token]);
-                    cache([$tranzak_credentials->cache_token_expiry_key=>Carbon::createFromTimestamp(time() + json_decode($response->body())->data->expiresIn)]);
-                }
-            }
-            // Assumed there is a valid api token
-            // Moving the performing the payment request proper
-            $headers = ['Authorization'=>'Bearer '.cache($tranzak_credentials->cache_token_key)];
-            $request_data = ['mobileWalletNumber'=>'237'.$request->momo_number, 'mchTransactionRef'=>'_apl_fee_'.time().'_'.random_int(1, 9999), "amount"=> $request->amount, "currencyCode"=> "XAF", "description"=>"Payment for application fee into ST LOUIS UNIVERSITY INSTITUTE"];
-            $_response = Http::withHeaders($headers)->post(config('tranzak.base').config('tranzak.direct_payment_request'), $request_data);
-            if($_response->status() == 200){
-                // return json_decode($_response->body())->data;
-                // save transaction and track it status
-
-                session()->put('processing_tranzak_transaction_details', json_encode(json_decode($_response->body())->data));
-                session()->put('tranzak_credentials', json_encode($tranzak_credentials));
-                // return $tranzak_credentials;
-                // return $this->pending_payment(array_push((), ['application_id']));
-                return redirect()->to(route('student.application.payment.processing', $application_id));
-            }
-
-            // END OF PAYMENT PROCESS
-            // $data = collect($data)->filter(function($value, $key){return $key != '_token';})->toArray();
-            // $application = ApplicationForm::updateOrInsert(['id'=> $application_id, 'student_id'=>auth('student')->id()], $data);
-        }else{
+        else{
             $data = $request->all();
             $data = collect($data)->filter(function($value, $key){return $key != '_token';})->toArray();
             $application = ApplicationForm::updateOrInsert(['id'=> $application_id, 'student_id'=>auth('student')->id()], $data);
         }
-        // $application->update($data);
-        if($step == 3){
-            // Form fully filled
-            $appl = ApplicationForm::find($application_id);
-            // return 'xyz';
-                $degs = json_decode($this->api_service->campusDegrees($appl->campus_id))->data;
-                if (($degree = collect($degs)->where('id', $appl->degree_id)->first()) != null) {
-                    if($degree->deg_name != 'MASTER DEGREE PROGRAMS'){
-                        return redirect(route('student.application.start', [$step+1, $application_id]));
-                    }
-                }
-        }
         $step = $request->step;
+        if($step == 6){return redirect(route('student.application.form.download', $application_id));}
         return redirect(route('student.application.start', [$step, $application_id]));
     }
 
@@ -490,7 +408,7 @@ class HomeController extends Controller
         if(!(Helpers::instance()->application_open())){
             return redirect(route('student.home'))->with('error', 'Application closed for '.Helpers::instance()->getYear()->name);
         }
-        $applications = auth('student')->user()->currentApplicationForms()->whereNull('transaction_id')->get();
+        $applications = auth('student')->user()->currentApplicationForms()->where('submitted', 0)->get();
         $data['title'] = "Submit Application";
         $data['applications'] = $applications;
         return view('student.online.submit_form', $data);
@@ -513,7 +431,7 @@ class HomeController extends Controller
         # code...
         $data['title'] = "Download Application Form";
         $data['_this'] = $this;
-        $data['applications'] = auth('student')->user()->applicationForms->whereNotNull('transaction_id');
+        $data['applications'] = auth('student')->user()->applicationForms->where('submitted', true);
         return view('student.online.download_form', $data);
     }
 
@@ -522,23 +440,13 @@ class HomeController extends Controller
         # code...
         try{
             $application = ApplicationForm::find($application_id);
-            $data['campuses'] = json_decode($this->api_service->campuses())->data;
-            $data['application'] = ApplicationForm::find($application_id);
-            $data['degree'] = collect(json_decode($this->api_service->degrees())->data??[])->where('id', $data['application']->degree_id)->first();
-            $data['campus'] = collect($data['campuses'])->where('id', $data['application']->campus_id)->first();
-            $data['certs'] = json_decode($this->api_service->certificates())->data;
+            $data['application'] = $application;
             
-            $data['programs'] = json_decode($this->api_service->campusDegreeCertificatePrograms($data['application']->campus_id, $data['application']->degree_id, $data['application']->entry_qualification))->data;
-            $data['cert'] = collect($data['certs'])->where('id', $data['application']->entry_qualification)->first();
-            $data['program1'] = collect($data['programs'])->where('id', $data['application']->program_first_choice)->first();
-            $data['program2'] = collect($data['programs'])->where('id', $data['application']->program_second_choice)->first();
-            
-            // $title = $application->degree??''.' APPLICATION FOR '.$application->campus->name??' --- '.' CAMPUS';
-            $title = "APPLICATION FORM FOR ".$data['degree']->deg_name;
+            $title = "APPLICATION FORM FOR ".$application->degree->name;
             $data['title'] = $title;
 
-            if(in_array(null, array_values($data))){ return redirect(route('student.application.start', [0, $application_id]))->with('message', "Make sure your form is correctly filled and try again.");}
-            // return view('student.online.form_dawnloadable', $data);
+            // if(in_array(null, array_values($data))){ return redirect(route('student.application.start', [0, $application_id]))->with('message', "Make sure your form is correctly filled and try again.");}
+            return view('student.online.form_dawnloadable', $data);
             $pdf = PDF::loadView('student.online.form_dawnloadable', $data);
             $filename = $title.' - '.$application->name.'.pdf';
             return $pdf->download($filename);
@@ -547,19 +455,4 @@ class HomeController extends Controller
         }
     }
 
-    public function payment_data ()
-    {
-        # code...
-        $data['title'] = "Payment Data";
-        $data['payments'] = ApplicationForm::where('student_id', auth('student')->id())->whereNotNull('transaction_id')->get();
-        if(request('appl') != null){
-            $data['appl'] = ApplicationForm::find(request('appl'));
-        }
-        foreach ($data['payments'] as $key => $value) {
-            # code...
-            $data['payments'][$key]->campus = collect(json_decode($this->api_service->campuses())->data)->where('id', $value->campus_id)->first();
-            $data['payments'][$key]->degree = collect(json_decode($this->api_service->degrees())->data)->where('id', $value->degree_id)->first();
-        }
-        return view('student.online.payment_data', $data);
-    }
 }

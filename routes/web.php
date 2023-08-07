@@ -18,8 +18,10 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\Transactions;
 use App\Http\Resources\SubjectResource;
 use App\Http\Services\MailService;
+use App\Models\Program;
 use App\Models\Resit;
 use App\Models\StudentSubject;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -66,6 +68,27 @@ Route::get('send_sms', [Controller::class, 'sendSMS']/*function(){
     //     echo "The message failed with status: " . $message->getStatus() . "\n";
     // }
 }*/);
+
+Route::get('store_courses', function(){
+    return view('store_courses');
+});
+Route::post('store_courses', function(Request $request){
+    $request->validate(['file'=>'required|file|mimes:csv']);
+    $file = $request->file('file');
+    $filename = '__'.time().'__'.random_int(100000, 999999).'.'.$file->getClientOriginalExtension();
+    $file->move(public_path('uploads'), $filename);
+
+    $subjects = [];
+    $file_reader = fopen(public_path('uploads').'/'.$filename, 'r');
+    $first = true;
+    while (($subject = fgetcsv($file_reader, 100, ',')) != null) {
+        # code...
+        if($first){$first = false; continue;}
+        $subjects[] = ['name'=>$subject[1]];
+    }
+    Subject::insert($subjects);
+    return $subjects;
+});
 
 Route::get('set_local/{lang}', [Controller::class, 'set_local'])->name('lang.switch');
 

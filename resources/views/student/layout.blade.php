@@ -211,13 +211,13 @@
                 <b class="arrow"></b>
             </li>
 
-            <li>
+            {{-- <li>
                 <a href="{{route('student.payment.data')}}">
                     <i  style="color: {{$bg1}};" class="menu-icon fa fa-dashboard"></i>
                     <span class="menu-text text-capitalize">{{__('text.payment_data')}}</span>
                 </a>
                 <b class="arrow"></b>
-            </li>
+            </li> --}}
 
             <li>
                 <a href="{{route('student.application.start', 0)}}">

@@ -11,11 +11,10 @@ class ApplicationForm extends Model
 
     protected $connection = 'mysql2';
     protected $fillable = [
-        'student_id', 'year_id', 'gender', 'name', 'dob', 'pob', 'region', 'division', 'residence', 'phone', 'email',
-        'program_first_choice', 'program_second_choice', 'first_spoken_language', 'first_written_language', 'second_spoken_language', 
-        'second_written_language', 'has_health_problem', 'has_health_allergy', 'has_disability', 'health_problem', 'health_allergy', 'disability',
-        'awaiting_results', 'previous_training', 'employments', 'fee_payer', 'fee_payer_name', 'fee_payer_residence', 'matric',
-        'fee_payer_tel', 'fee_payer_occupation', 'candidate_declaration', 'parent_declaration', 'campus_id', 'degree_id', 'transaction_id', 'admitted'
+        'student_id', 'year_id', 'gender', 'name', 'dob', 'id_card_number', 'id_date_of_issue', 'id_place_of_issue', 'nationality', 'country_of_birth', 'referer', 'pob', 'region', 'residence', 'phone', 'extra_phone', 'email',
+        'program', 'guardian', 'guardian_phone', 'guardian_address', 'sponsor', 'sponsor_phone', 'sponsor_address', 'secondary_school', 'secondary_exam_center', 'secondary_candidate_number', 'secondary_exam_year', 'gce_ol_record',
+        'high_school', 'high_school_exam_center', 'high_school_candidate_number', 'high_school_exam_year', 'gce_al_record', 'matric',
+        'candidate_declaration', 'parent_declaration', 'degree_id', 'admitted', 'submitted'
     ];
 
     public function student()
@@ -24,10 +23,10 @@ class ApplicationForm extends Model
         return $this->belongsTo(Students::class, 'student_id');
     }
 
-    public function transaction()
+    public function degree()
     {
         # code...
-        return $this->belongsTo(Transaction::class, 'transaction_id');
+        return $this->belongsTo(Degree::class);
     }
 
     public function year()
@@ -42,15 +41,15 @@ class ApplicationForm extends Model
         return $this->belongsTo(Region::class, 'region');
     }
 
-    public function _division()
-    {
-        # code...
-        return $this->belongsTo(Division::class, 'division');
-    }
-
     public function campus_banks()
     {
         return CampusBank::where('campus_id', $this->campus_id);
+    }
+
+    public function _program()
+    {
+        # code...
+        return $this->belongsTo(Program::class, 'program');
     }
 
 }
