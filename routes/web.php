@@ -309,6 +309,7 @@ Route::get('student/charges/complete_transaction/{ts_id}', 'Student\HomeControll
 Route::get('student/charges/failed_transaction/{ts_id}', 'Student\HomeController@failed_charges_transaction')->name('student.charges.failed');
 Route::get('student/tranzak/processing', 'Student\HomeController@tranzak_payment_processing')->name('student.tranzak.processing');
 Route::post('student/tranzak/complete', 'Student\HomeController@tranzak_complete')->name('student.tranzak.complete');
+Route::get('student/tranzak/status', 'Student\HomeController@tranzak_payment_status')->name('student.tranzak.status');
 
 
 Route::get('section-children/{parent}', 'HomeController@children')->name('section-children');

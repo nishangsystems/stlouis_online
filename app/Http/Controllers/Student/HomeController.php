@@ -1114,6 +1114,28 @@ class HomeController extends Controller
         return view('student.momo.processing', $data);
     }
 
+    // check tranzak payment status
+    public function tranzak_payment_status(Request $request){
+        try {
+            //code...
+            $request->validate(['request_id' => 'required', 'cache_token_key' => 'required']);
+    
+            $url =config('tranzak.tranzak.base').config('tranzak.tranzak.transaction_details').$request->request_id;
+            $headers =  ['Access-Control-Allow-Origin'=> '*',  'Authorization' => "Bearer { cache($request->cache_token_key)}"];
+    
+            $resp = Http::withHeaders($headers)->get($url);
+            if($resp->successful()){
+                $data = $resp->collect();
+                return response()->json($data);
+            }
+            else {
+                return response()->json($resp->collect(), 500);
+            }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
     //----------------
     public function tranzak_complete(Request $request)
     {

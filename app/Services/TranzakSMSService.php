@@ -44,6 +44,8 @@ class TranzakSMSService{
                     goto ERROR;
                 }else{
                     ERROR:
+                    // logger($response->body);
+                    logger(json_encode($response->collect()));
                     logger()->error("Error authentication SMS servers. Contact service provider if this persists");
                 }
             }
@@ -52,7 +54,8 @@ class TranzakSMSService{
             logger()->error("Tranzak authentication failed. Make sure url is correct and that you have internet connection");
             return; 
         } catch (\Throwable $th){
-            throw $th;
+            // throw $th;
+            logger()->error($th);
         }
     }
 

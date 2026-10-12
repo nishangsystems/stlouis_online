@@ -33,12 +33,12 @@
 
     // check for the transaction status every 3s
     $set_interval = setInterval(() => {
-        _url = "{{config('tranzak.tranzak.base').config('tranzak.tranzak.transaction_details').$transaction->requestId}}";
-        headers = { 'Access-Control-Allow-Origin': '*',  'Authorization' : "Bearer {{ cache($tranzak_credentials->cache_token_key) }}"};
+        _url = "{{ route('student.tranzak.status') }}";
+        let data = {"request_id": "{{ $transaction->requestId }}", "cache_token_key": "{{ $tranzak_credentials->cache_token_key }}"};
         $.ajax({
             method: 'get',
             url: _url,
-            headers: headers,
+            data: data,
             success: function(data){
                 // check if status is completed or failed
                 response_data = data.data
@@ -66,6 +66,9 @@
                     $('#_temp_form').submit();
                     // window.location = url;
                 }
+            },
+            error: (xhr, sts, msg)=>{
+                console.log(xhr, sts, msg);
             }
         });
     }, 5000);
