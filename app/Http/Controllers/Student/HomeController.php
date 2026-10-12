@@ -9,6 +9,7 @@ use App\Models\ApplicationForm;
 use App\Models\Batch;
 use App\Models\Charge;
 use App\Models\Config;
+use App\Models\PendingTranzakTransaction;
 use App\Models\PlatformCharge;
 use App\Models\Transaction;
 use App\Models\TranzakCredential;
@@ -1118,18 +1119,34 @@ class HomeController extends Controller
     public function tranzak_payment_status(Request $request){
         try {
             //code...
-            $request->validate(['request_id' => 'required', 'cache_token_key' => 'required']);
-    
-            $url =config('tranzak.tranzak.base').config('tranzak.tranzak.transaction_details').$request->request_id;
-            $headers =  ['Access-Control-Allow-Origin'=> '*',  'Authorization' => "Bearer { cache($request->cache_token_key)}"];
-    
-            $resp = Http::withHeaders($headers)->get($url);
-            if($resp->successful()){
-                $data = $resp->collect();
-                return response()->json($data);
+            $request->validate(['request_id' => 'required']);
+            $pending_transaction = PendingTranzakTransaction::firstWhere('requestId', $request->request_id);
+            
+            if(empty($pending_transaction))
+                return response()->json(['message' => "Operation failed. No pending transaction with given request id"], 400);
+            
+            $trans = json_decode($pending_transaction->transaction);
+            $counter = 0;
+            $tranzak_credentials = TranzakCredential::where('campus_id', $pending_transaction->campus_id)->first();
+            if($tranzak_credentials == null){
+                return response()->json(['message' => "Operation failed. No credential record found for this tranzaction"], 400);
             }
-            else {
-                return response()->json($resp->collect(), 500);
+            if(cache($tranzak_credentials->cache_token_key) == null or Carbon::parse(cache($tranzak_credentials->cache_token_expiry_key))->isAfter(now())){
+                GEN_TOKEN:
+                $response = Http::post(config('tranzak.tranzak.base').config('tranzak.tranzak.token'), ['appId'=>$tranzak_credentials->app_id, 'appKey'=>$tranzak_credentials->api_key]);
+                if($response->status() == 200){
+                    cache([$tranzak_credentials->cache_token_key => json_decode($response->body())->data->token]);
+                    cache([$tranzak_credentials->cache_token_expiry_key=>Carbon::createFromTimestamp(time() + json_decode($response->body())->data->expiresIn)]);
+                }
+                $counter++;
+            }
+            $url = config('tranzak.tranzak.base').config('tranzak.tranzak.transaction_details').$pending_transaction->requestId;
+            $headers = ['Access-Control-Allow-Origin'=> '*',  'Authorization' => "Bearer ".cache($tranzak_credentials->cache_token_key)];
+            $response = Http::withHeaders($headers)->get($url);
+            logger()->channel('payment_follower')->info(json_encode($response->collect('data')));
+            if($response->status() == 200){
+                $response_data = $response->collect();
+                return response()->json($response_data);
             }
         } catch (\Throwable $th) {
             throw $th;

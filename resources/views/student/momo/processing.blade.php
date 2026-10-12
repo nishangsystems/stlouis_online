@@ -33,16 +33,14 @@
 
     // check for the transaction status every 3s
     $set_interval = setInterval(() => {
-        _url = "{{ route('student.tranzak.status') }}";
-        let data = {"request_id": "{{ $transaction->requestId }}", "cache_token_key": "{{ $tranzak_credentials->cache_token_key }}"};
+        _url = "{{ route('student.tranzak.status') }}?request_id={{ $transaction->requestId }}";
         $.ajax({
             method: 'get',
             url: _url,
-            data: data,
             success: function(data){
                 // check if status is completed or failed
+                console.log(data);
                 response_data = data.data
-                console.log(response_data);
                 if(response_data.status == "PAYMENT_IN_PROGRESS"){
                     return;
                 }

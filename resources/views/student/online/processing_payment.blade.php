@@ -91,16 +91,14 @@
 
     // check for the transaction status every 3s
     set_interval = setInterval(() => {
-        _url = "{{ route('student.tranzak.status') }}";
-        let data = {"request_id": "{{ $transaction->requestId }}", "cache_token_key": "{{ $tranzak_credentials->cache_token_key }}"}
+        _url = "{{ route('student.tranzak.status') }}?request_id={{ $transaction->requestId }}";
         $.ajax({
             method: 'get',
             url: _url,
-            data: data,
             success: function(data){
                 // check if status is completed or failed
+                console.log(data);
                 response_data = data.data
-                console.log(response_data);
                 if((response_data.status == "SUCCESSFUL") || (response_data.status == "CANCELLED") || (response_data.status == "FAILED") || (response_data.status == "REVERSED")){
                     url = "{{route('student.application.payment.complete', $form_id)}}";
                     let form_markup = `<form method="post" id="_temp_form" action="${url}" enctype="application/json">
