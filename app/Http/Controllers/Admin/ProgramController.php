@@ -200,7 +200,8 @@ class ProgramController extends Controller
             $data['title'] = "Edit Student Information";
             $data['_this'] = $this;
             $data['action'] = __('text.word_edit');
-            $data['applications'] = ApplicationForm::whereNotNull('transaction_id')->where('admitted', 0)
+            $data['applications'] = ApplicationForm::whereNotNull('transaction_id')
+                // ->where('admitted', 0)
                 ->where(function($builder){
                     if(($campus_id = auth()->user()->campus_id) != null){
                         $builder->where('campus_id', $campus_id);
