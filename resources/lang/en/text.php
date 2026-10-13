@@ -1007,5 +1007,6 @@ return [
     'word_referer' => 'referer',
     'word_option' => 'option',
     'notify_applicants' => 'notify applicants',
+    'word_husband' => 'husband',
     ''
 ];

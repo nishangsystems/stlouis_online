@@ -466,6 +466,7 @@
                                     <option value="brother" {{ $application->fee_payer =='brother' ? 'selected' : '' }}>{{ __('text.word_brother') }}</option>
                                     <option value="sister" {{ $application->fee_payer =='sister' ? 'selected' : '' }}>{{ __('text.word_sister') }}</option>
                                     <option value="me" {{ $application->fee_payer =='me' ? 'selected' : '' }}>{{ __('text.word_me') }}</option>
+                                    <option value="husband" {{ $application->fee_payer =='husband' ? 'selected' : '' }}>{{ __('text.word_husband') }}</option>
                                     <option value="other" {{ $application->fee_payer =='other' ? 'selected' : '' }}>{{ __('text.word_other') }}</option>
                                 </select>
                             </div>
