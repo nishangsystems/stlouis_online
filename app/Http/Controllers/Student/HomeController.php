@@ -55,6 +55,7 @@ class HomeController extends Controller
         $data['title'] = "Program Provisions";
         // dd($this->api_service->program_provisioning_status_set());
         $data['status_set'] = $this->api_service->program_provisioning_status_set()['data']??[];
+        
         $status_collection = $this->api_service->program_provision_status_settings();
         if($status_collection->has('message')){
             session()->flash('error', $status_collection['message']);
@@ -1086,7 +1087,7 @@ class HomeController extends Controller
         $request_data = ['mobileWalletNumber'=>$tel, 'mchTransactionRef'=>'_'.str_replace(' ', '_', $request->payment_purpose).'_payment_'.time().'_'.random_int(1, 9999), "amount"=> $request->amount, "currencyCode"=> "XAF", "description"=>"Payment for {$request->payment_purpose} - ST.LOUIS UNIVERSITY INSTITUTE."];
         $_response = Http::withHeaders($headers)->post(config('tranzak.tranzak.base').config('tranzak.tranzak.direct_payment_request'), $request_data);
         // dd($_response->collect());
-        if($_response->collect()['success'] == true){
+        if($_response->isSuccessful()){
 
             // create pending transaction
 
