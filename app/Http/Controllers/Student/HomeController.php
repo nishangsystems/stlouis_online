@@ -1087,7 +1087,7 @@ class HomeController extends Controller
         $request_data = ['mobileWalletNumber'=>$tel, 'mchTransactionRef'=>'_'.str_replace(' ', '_', $request->payment_purpose).'_payment_'.time().'_'.random_int(1, 9999), "amount"=> $request->amount, "currencyCode"=> "XAF", "description"=>"Payment for {$request->payment_purpose} - ST.LOUIS UNIVERSITY INSTITUTE."];
         $_response = Http::withHeaders($headers)->post(config('tranzak.tranzak.base').config('tranzak.tranzak.direct_payment_request'), $request_data);
         // dd($_response->collect());
-        if($_response->isSuccessful()){
+        if($_response->successful()){
 
             // create pending transaction
 
