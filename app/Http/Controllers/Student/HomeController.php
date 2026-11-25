@@ -640,7 +640,7 @@ class HomeController extends Controller
             }else{
                 $request_data = ['mobileWalletNumber'=>'237'.$request->momo_number, 'mchTransactionRef'=>'_apl_fee_'.time().'_'.random_int(1, 9999), "amount"=> $request->amount, "currencyCode"=> "XAF", "description"=>"Payment for application fee into ST LOUIS UNIVERSITY INSTITUTE"];
                 $_response = Http::withHeaders($headers)->post(config('tranzak.base').config('tranzak.direct_payment_request'), $request_data);
-                if($_response->status() == 200){
+                if($_response->successful()){
     
                     session()->put('processing_tranzak_transaction_details', json_encode(json_decode($_response->body())->data));
                     session()->put('tranzak_credentials', json_encode($tranzak_credentials));
@@ -649,11 +649,14 @@ class HomeController extends Controller
                     $data = ['student_id'=>auth('student')->id(), 'form_id'=>$application_id, 'requestId'=>$_response->collect()['data']['requestId'], 'payment_id'=>$applxn->degree_id??null, 'year_id'=>$applxn->year_id, 'campus_id'=>$applxn->campus_id, 'purpose'=>'APPLICATION', 'transaction'=>json_encode($_response->collect()['data'])];
                     \App\Models\PendingTranzakTransaction::create($data);
                     return redirect()->to(route('student.application.payment.processing', $application_id));
+                }else{
+                    // dd($_response->collect());
+                    if(count($_response->collect()['data']) == 0 and $tk_counter == 0){
+                        goto REQUEST_TOKEN;
+                    }
+                    session()->flash('error', "Failed to initiate payment. " . $_response->body());
+                    return back();
                 }
-            }
-            // dd($_response->collect());
-            if(count($_response->collect()['data']) == 0 and $tk_counter == 0){
-                goto REQUEST_TOKEN;
             }
 
         }else{
