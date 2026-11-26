@@ -606,7 +606,7 @@ class HomeController extends Controller
             $tk_counter = 0;
             $application = auth('student')->user()->applicationForms()->where('year_id', Helpers::instance()->getCurrentAccademicYear())->first();
             $tranzak_credentials = TranzakCredential::where('campus_id', $application->campus_id)->first();
-            if(cache($tranzak_credentials->cache_token_key) == null or Carbon::parse(cache($tranzak_credentials->cache_token_expiry_key))->isPast()){
+            if(cache($tranzak_credentials->cache_token_key) == null or now()->parse(cache($tranzak_credentials->cache_token_expiry_key))->isPast()){
                 // get and cache different token
                 // dd($request->all());
                 REQUEST_TOKEN:
@@ -617,7 +617,7 @@ class HomeController extends Controller
                     // return Carbon::createFromTimestamp(time() + json_decode($response->body())->data->expiresIn);
                     // cache token and token expiration to session
                     cache([$tranzak_credentials->cache_token_key => json_decode($response->body())->data->token]);
-                    cache([$tranzak_credentials->cache_token_expiry_key=>Carbon::createFromTimestamp(time() + json_decode($response->body())->data->expiresIn)]);
+                    cache([$tranzak_credentials->cache_token_expiry_key=>now()->addSeconds((int)(($response->collect()['data']['expiresIn']??0)*0.95))]);
                 }
             }
             $headers = ['Authorization'=>'Bearer '.cache($tranzak_credentials->cache_token_key)];
@@ -651,10 +651,10 @@ class HomeController extends Controller
                     return redirect()->to(route('student.application.payment.processing', $application_id));
                 }else{
                     // dd($_response->collect());
-                    if(count($_response->collect()['data']) == 0 and $tk_counter == 0){
+                    if(count($_response->collect()['data']) == 0 and $tk_counter <= 1){
                         goto REQUEST_TOKEN;
                     }
-                    session()->flash('error', "Failed to initiate payment. " . $_response->body());
+                    session()->flash('error', "Failed to initiate payment. " . $_response->collect()['errorMsg']);
                     return back();
                 }
             }
