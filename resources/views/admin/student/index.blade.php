@@ -78,7 +78,7 @@
                             <form action="{{ route('admin.student.password.reset', ['id' => '__SID__']) }}}" method="post" id="id_${element.id}" class="hidden">@csrf</form>
                         </td>
                     </tr>
-                    `.replace('__SID__', element.id).replace('__ACTIVE__', element.active);
+                    `.replace('__SID__', element.id);
                 });
                 $('#table_body').html(html);
             },
